@@ -3,135 +3,180 @@
 <html lang="hi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI Viral Clips</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#10111b;color:white;font-family:Arial,sans-serif}
-header{text-align:center;padding:30px 15px}
+body{margin:0;background:#10111b;color:white;font-family:Arial}
+header{text-align:center;padding:25px}
 h1{color:#a78bfa}
-main{max-width:650px;margin:20px auto;padding:25px;background:#202132;border-radius:16px}
-input,button{width:100%;padding:13px;margin:9px 0;border-radius:8px;font-size:16px}
-input{background:#111322;color:white;border:1px solid #555}
+main{max-width:650px;margin:20px auto;padding:22px;background:#202132;border-radius:16px}
+input,select,button{width:100%;padding:13px;margin:9px 0;border-radius:8px;font-size:16px}
+input,select{background:#111322;color:white;border:1px solid #555}
 button{background:#8057ee;color:white;border:0;font-weight:bold;cursor:pointer}
 video{width:100%;margin-top:15px;background:#000}
 #status{color:#b9a4ff;overflow-wrap:anywhere}
-a{color:#a78bfa}
+.clip{padding:12px;background:#111322;margin:12px 0;border-radius:8px}
+a{color:#b9a4ff}
 </style>
 </head>
 <body>
 <header>
 <h1>AI Viral Clips</h1>
-<p>Create short clips from your own videos</p>
+<p>Create multiple short clips from your own videos</p>
 </header>
-
 <main>
-<h2>1. YouTube Video Link</h2>
-<input type="url" id="youtube" placeholder="Paste YouTube link (optional)">
-<p>YouTube link is for reference. Upload your own video file below to create a clip.</p>
-
-<h2>2. Select Your Video</h2>
+<h2>1. Select Your Video</h2>
 <input type="file" id="file" accept="video/*">
 <video id="video" controls></video>
 
-<h2>3. Choose Clip Time</h2>
-<label>Start time (seconds)</label>
-<input type="number" id="start" value="0" min="0">
-<label>End time (seconds)</label>
-<input type="number" id="end" value="15" min="1">
+<h2>2. Number of Clips</h2>
+<select id="count">
+<option value="5">5 Clips</option>
+<option value="10">10 Clips</option>
+</select>
 
-<button id="make">Create Clip</button>
+<h2>3. Clip Duration</h2>
+<select id="duration">
+<option value="30">30 Seconds</option>
+<option value="60">60 Seconds</option>
+<option value="90">90 Seconds</option>
+</select>
+
+<h2>4. Video Format</h2>
+<select id="format">
+<option value="vertical">9:16 Shorts (Vertical)</option>
+<option value="horizontal">16:9 Landscape</option>
+</select>
+
+<button id="make">Generate Clips</button>
 <p id="status">Select your video to begin.</p>
-<div id="result"></div>
+<div id="results"></div>
 </main>
 
 <script>
 const fileInput=document.getElementById("file");
 const video=document.getElementById("video");
 const status=document.getElementById("status");
-const result=document.getElementById("result");
+const results=document.getElementById("results");
 let videoURL="";
 
 fileInput.addEventListener("change",()=>{
-  const file=fileInput.files[0];
-  if(!file)return;
-  if(videoURL)URL.revokeObjectURL(videoURL);
-  videoURL=URL.createObjectURL(file);
-  video.src=videoURL;
-  status.textContent="Video loaded. Choose start and end times.";
-  result.innerHTML="";
+ const file=fileInput.files[0];
+ if(!file)return;
+ if(videoURL)URL.revokeObjectURL(videoURL);
+ videoURL=URL.createObjectURL(file);
+ video.src=videoURL;
+ results.innerHTML="";
+ status.textContent="Video loaded. Choose your clip settings.";
 });
 
-document.getElementById("make").addEventListener("click",async()=>{
-  if(!video.src || !video.duration){
-    status.textContent="Please select a video first.";
-    return;
-  }
+function waitForSeek(){
+ return new Promise(resolve=>{
+  video.addEventListener("seeked",resolve,{once:true});
+ });
+}
 
-  const start=Number(document.getElementById("start").value);
-  const end=Number(document.getElementById("end").value);
+function recordClip(start,duration,vertical,index){
+ return new Promise(async(resolve,reject)=>{
+  const width=vertical?720:1280;
+  const height=vertical?1280:720;
+  const canvas=document.createElement("canvas");
+  canvas.width=width;
+  canvas.height=height;
+  const ctx=canvas.getContext("2d");
 
-  if(!Number.isFinite(start)||!Number.isFinite(end)||
-     start<0||end<=start||end>video.duration){
-    status.textContent="Please enter valid start and end times.";
-    return;
-  }
-
-  if(!video.captureStream || !window.MediaRecorder){
-    status.textContent="Your browser does not support clip creation.";
-    return;
-  }
-
-  const stream=video.captureStream();
-  const mime=["video/webm;codecs=vp9","video/webm;codecs=vp8","video/webm"]
-    .find(type=>MediaRecorder.isTypeSupported(type));
-
-  if(!mime){
-    status.textContent="WebM recording is not supported in this browser.";
-    return;
-  }
-
-  const chunks=[];
-  let recorder;
+  const draw=()=>{
+   const vw=video.videoWidth, vh=video.videoHeight;
+   if(vw&&vh){
+    const scale=Math.max(width/vw,height/vh);
+    const sw=width/scale, sh=height/scale;
+    const sx=(vw-sw)/2, sy=(vh-sh)/2;
+    ctx.drawImage(video,sx,sy,sw,sh,0,0,width,height);
+   }
+   if(!video.paused && !video.ended)requestAnimationFrame(draw);
+  };
 
   try{
-    video.pause();
-    video.currentTime=start;
-    await new Promise(resolve=>{
-      video.addEventListener("seeked",resolve,{once:true});
-    });
+   video.pause();
+   video.currentTime=start;
+   await waitForSeek();
 
-    recorder=new MediaRecorder(stream,{mimeType:mime});
-    recorder.ondataavailable=e=>{
-      if(e.data.size>0)chunks.push(e.data);
-    };
+   const canvasStream=canvas.captureStream(30);
+   const sourceStream=video.captureStream();
+   const tracks=[...canvasStream.getVideoTracks(),...sourceStream.getAudioTracks()];
+   const stream=new MediaStream(tracks);
 
-    recorder.onstop=()=>{
-      const blob=new Blob(chunks,{type:mime});
-      const url=URL.createObjectURL(blob);
-      result.innerHTML='<p>Your clip is ready:</p><a href="'+url+'" download="my-clip.webm">Download Clip</a>';
-      status.textContent="Clip created successfully!";
-      stream.getTracks().forEach(track=>track.stop());
-    };
+   const mime=["video/webm;codecs=vp9","video/webm;codecs=vp8","video/webm"]
+    .find(t=>MediaRecorder.isTypeSupported(t));
+   if(!mime)throw new Error("WebM recording not supported");
 
-    recorder.start();
-    await video.play();
-    status.textContent="Creating your clip...";
+   const chunks=[];
+   const recorder=new MediaRecorder(stream,{mimeType:mime});
+   recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
+   recorder.onerror=()=>reject(new Error("Recording failed"));
 
-    const check=()=>{
-      if(video.currentTime>=end || video.ended){
-        video.pause();
-        if(recorder.state==="recording")recorder.stop();
-      }else{
-        requestAnimationFrame(check);
-      }
-    };
-    check();
+   recorder.onstop=()=>{
+    stream.getTracks().forEach(t=>t.stop());
+    resolve(new Blob(chunks,{type:mime}));
+   };
 
+   recorder.start();
+   draw();
+   await video.play();
+
+   const finish=()=>{
+    if(video.currentTime>=start+duration || video.ended){
+     video.pause();
+     if(recorder.state==="recording")recorder.stop();
+    }else{
+     requestAnimationFrame(finish);
+    }
+   };
+   finish();
+  }catch(e){reject(e)}
+ });
+}
+
+document.getElementById("make").addEventListener("click",async()=>{
+ if(!video.src||!video.duration){
+  status.textContent="Please select a video first.";
+  return;
+ }
+ const count=Number(document.getElementById("count").value);
+ const duration=Number(document.getElementById("duration").value);
+ const vertical=document.getElementById("format").value==="vertical";
+
+ if(video.duration<duration){
+  status.textContent="Your video is shorter than the selected clip duration.";
+  return;
+ }
+
+ const maxStart=video.duration-duration;
+ results.innerHTML="";
+ status.textContent="Preparing clips... Keep this page open.";
+
+ for(let i=0;i<count;i++){
+  const start=count===1?0:maxStart*i/(count-1);
+  try{
+   status.textContent="Creating clip "+(i+1)+" of "+count+"...";
+   const blob=await recordClip(start,duration,vertical,i);
+   const url=URL.createObjectURL(blob);
+   const item=document.createElement("div");
+   item.className="clip";
+   const link=document.createElement("a");
+   link.href=url;
+   link.download="clip-"+(i+1)+".webm";
+   link.textContent="Download Clip "+(i+1);
+   item.appendChild(link);
+   results.appendChild(item);
   }catch(error){
-    status.textContent="Could not create clip. Please try again.";
-    stream.getTracks().forEach(track=>track.stop());
+   status.textContent="Error creating clip "+(i+1)+". Try a different video.";
+   return;
   }
+ }
+ video.pause();
+ status.textContent="All "+count+" clips are ready!";
 });
 </script>
 </body>
