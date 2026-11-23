@@ -3,532 +3,96 @@
 <html lang="hi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI Viral Clips</title>
 <style>
-*{box-sizing:border-box}
-body{margin:0;background:#10111b;color:white;font-family:Arial}
-header{text-align:center;padding:25px}
-h1{color:#a78bfa}
-main{max-width:700px;margin:20px auto;padding:22px;background:#202132;border-radius:16px}
-input,select,button,textarea{width:100%;padding:13px;margin:9px 0;border-radius:8px;font-size:16px}
-input,select,textarea{background:#111322;color:white;border:1px solid #555}
-input[type=color]{height:48px;padding:4px}
-input[type=checkbox]{width:auto}
-button{background:#8057ee;color:white;border:0;font-weight:bold;cursor:pointer}
-button:hover{background:#6840d0}
-video{width:100%;margin-top:15px;background:#000}
-p{line-height:1.5}
-small{color:#c9c9d8}
-.clip{padding:12px;background:#111322;margin:12px 0;border-radius:8px}
-a{color:#c4aaff}
-#status,#ytstatus,#captionStatus,#viralStatus{color:#c4aaff;overflow-wrap:anywhere}
+body {
+  background:#101426;
+  color:white;
+  font-family:Arial;
+  text-align:center;
+  padding:30px;
+}
+.container {
+  max-width:650px;
+  margin:50px auto;
+  background:#1b2340;
+  padding:25px;
+  border-radius:15px;
+}
+input {
+  width:90%;
+  padding:15px;
+  border-radius:8px;
+  border:0;
+  margin:15px 0;
+}
+button {
+  padding:15px 25px;
+  background:#7657ff;
+  color:white;
+  border:0;
+  border-radius:8px;
+  cursor:pointer;
+}
+#status {margin-top:25px;}
 </style>
 </head>
 <body>
-<header>
+<div class="container">
 <h1>AI Viral Clips</h1>
-<p>Create clips from your own videos</p>
-</header>
-<main>
+<p>Paste YouTube Video URL</p>
 
-<h2>1. YouTube Video Link</h2>
-<input type="url" id="youtube" placeholder="Paste YouTube video URL here">
-<button id="check">Check YouTube Link</button>
-<p id="ytstatus"></p>
-<p><small>Link checking only. Upload a video file you own or have permission to use.</small></p>
+<input id="youtubeUrl"
+placeholder="Paste YouTube URL">
 
-<h2>2. Select Your Video</h2>
-<input type="file" id="file" accept="video/*">
-<video id="video" controls></video>
+<br>
 
-<h2>3. Number of Clips</h2>
-<select id="count">
-<option value="5">5 Clips</option>
-<option value="10">10 Clips</option>
-</select>
+<button onclick="startClipping()">
+Create Viral Clips
+</button>
 
-<h2>4. Clip Duration</h2>
-<select id="duration">
-<option value="30">30 Seconds</option>
-<option value="60">60 Seconds</option>
-<option value="90">90 Seconds</option>
-</select>
-
-<h2>5. Video Format</h2>
-<select id="format">
-<option value="vertical">9:16 Shorts (Vertical)</option>
-<option value="horizontal">16:9 Landscape</option>
-</select>
-
-<h2>6. Captions</h2>
-<select id="captionMode">
-<option value="none">No Captions</option>
-<option value="manual">Manual Captions</option>
-<option value="auto">Auto Captions</option>
-</select>
-
-<label>Auto Caption Language</label>
-<select id="captionLanguage">
-<option value="hi-IN">Hindi</option>
-<option value="en-US">English</option>
-</select>
-<button id="autoCaption">Generate Auto Captions</button>
-<p><small>Auto captions need supported browser speech recognition and internet. Audio may be processed by the browser's speech service. Accuracy and availability vary.</small></p>
-
-<h3>Manual Captions</h3>
-<p><small>हर लाइन में लिखें: शुरू का समय | खत्म होने का समय | Caption Text</small></p>
-<textarea id="manualText" rows="5" placeholder="0|3|नमस्ते दोस्तों&#10;3|6|आज हम नई वीडियो देखेंगे"></textarea>
-<button id="applyManual">Apply Manual Captions</button>
-
-<h3>Caption Design</h3>
-<label>Font Style</label>
-<select id="captionFont">
-<option value="Arial">Arial</option>
-<option value="Georgia">Georgia</option>
-<option value="Verdana">Verdana</option>
-<option value="Trebuchet MS">Trebuchet</option>
-</select>
-
-<label>Font Size</label>
-<input type="range" id="captionSize" min="20" max="70" value="36">
-
-<label>Text Color</label>
-<input type="color" id="captionColor" value="#ffffff">
-
-<label>Background Color</label>
-<input type="color" id="captionBg" value="#000000">
-
-<label>Background Transparency</label>
-<input type="range" id="captionOpacity" min="0" max="100" value="75">
-
-<label>Text Position</label>
-<select id="captionPosition">
-<option value="bottom">Bottom</option>
-<option value="center">Center</option>
-<option value="top">Top</option>
-</select>
-
-<label><input type="checkbox" id="captionBold" checked> Bold Text</label>
-
-<p id="captionStatus"></p>
-<div id="captionList"></div>
-
-<h2>7. AI Viral Moments Finder</h2>
-<p><small>Captions के आधार पर संभावित मजेदार और दिलचस्प Moments खोजें।</small></p>
-
-<select id="viralType">
-<option value="all">All Interesting Moments</option>
-<option value="funny">Funny Moments</option>
-<option value="surprise">Surprising Moments</option>
-<option value="interesting">Interesting Moments</option>
-</select>
-
-<button id="findViral">Find Viral Moments</button>
-<p id="viralStatus"></p>
-<div id="viralResults"></div>
-
-<button id="make">Generate Clips</button>
-<p id="status">Select your own video to begin.</p>
+<div id="status"></div>
 <div id="results"></div>
-
-</main>
+</div>
 
 <script>
-const video=document.getElementById("video");
-const fileInput=document.getElementById("file");
-const status=document.getElementById("status");
-const results=document.getElementById("results");
-const captionStatus=document.getElementById("captionStatus");
-const captionList=document.getElementById("captionList");
+const API_URL = "YOUR_CLOUD_BACKEND_URL";
 
-let videoURL="";
-let captions=[];
-let selectedMoments=[];
-let recognition=null;
-let autoStream=null;
+async function startClipping() {
+ const url = document.getElementById("youtubeUrl").value.trim();
+ const status = document.getElementById("status");
+ const results = document.getElementById("results");
 
-document.getElementById("check").onclick=()=>{
- const url=document.getElementById("youtube").value.trim();
- const out=document.getElementById("ytstatus");
- try{
-  const u=new URL(url);
-  if(!["youtube.com","www.youtube.com","m.youtube.com","youtu.be"].includes(u.hostname))throw Error();
-  out.textContent="Valid YouTube link. Upload your own video file below.";
- }catch(e){
-  out.textContent="Please enter a valid YouTube link.";
- }
-};
+ results.innerHTML = "";
 
-fileInput.addEventListener("change",()=>{
- const file=fileInput.files[0];
- if(!file)return;
- if(videoURL)URL.revokeObjectURL(videoURL);
- videoURL=URL.createObjectURL(file);
- video.src=videoURL;
- captions=[];
- selectedMoments=[];
- results.innerHTML="";
- document.getElementById("viralResults").innerHTML="";
- showCaptions();
- status.textContent="Video loaded. Choose your settings.";
-});
-
-function showCaptions(){
- captionList.innerHTML="";
- captions.forEach((c,i)=>{
-  const p=document.createElement("p");
-  p.textContent=(i+1)+". "+c.start.toFixed(1)+"s - "+c.end.toFixed(1)+"s: "+c.text;
-  captionList.appendChild(p);
- });
-}
-
-document.getElementById("applyManual").onclick=()=>{
- const lines=document.getElementById("manualText").value.split("\n");
- const list=[];
- for(const line of lines){
-  if(!line.trim())continue;
-  const parts=line.split("|");
-  const start=Number(parts[0]);
-  const end=Number(parts[1]);
-  const text=parts.slice(2).join("|").trim();
-  if(parts.length<3||!Number.isFinite(start)||!Number.isFinite(end)||start<0||end<=start||!text){
-   captionStatus.textContent="Format सही करें: start|end|caption";
+ if (!/^https?:\/\/(www\.)?(youtube\.com|youtu\.be)\//i.test(url)) {
+   status.innerText = "Please enter a valid YouTube URL.";
    return;
-  }
-  if(video.duration&&end>video.duration){
-   captionStatus.textContent="Caption का समय वीडियो से ज्यादा है।";
+ }
+
+ if (API_URL === "YOUR_CLOUD_BACKEND_URL") {
+   status.innerText = "Cloud Backend connect karna baki hai.";
    return;
-  }
-  list.push({start,end,text});
  }
- captions=list.sort((a,b)=>a.start-b.start);
- selectedMoments=[];
- document.getElementById("captionMode").value="manual";
- showCaptions();
- captionStatus.textContent=captions.length+" captions added.";
-};
 
-document.getElementById("autoCaption").onclick=()=>{
- if(!video.src||!video.duration){
-  captionStatus.textContent="पहले वीडियो अपलोड करें।";
-  return;
- }
- const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
- if(!SpeechRecognition||typeof video.captureStream!=="function"){
-  captionStatus.textContent="इस browser में Auto Captions उपलब्ध नहीं हैं।";
-  return;
- }
- if(recognition){
-  try{recognition.stop();}catch(e){}
- }
- captions=[];
- selectedMoments=[];
- showCaptions();
- const rec=new SpeechRecognition();
- recognition=rec;
- rec.lang=document.getElementById("captionLanguage").value;
- rec.continuous=true;
- rec.interimResults=false;
+ status.innerText = "Starting AI processing...";
 
- rec.onresult=(event)=>{
-  for(let i=event.resultIndex;i<event.results.length;i++){
-   if(event.results[i].isFinal){
-    const text=event.results[i][0].transcript.trim();
-    const end=video.currentTime;
-    if(text&&end>0){
-     const estimate=Math.max(0,end-Math.max(1.5,text.length/12));
-     const previous=captions.length?captions[captions.length-1].end:0;
-     const start=Math.max(estimate,previous);
-     if(end>start){
-      captions.push({start,end,text});
-      showCaptions();
-     }
-    }
-   }
-  }
- };
-
- rec.onerror=(e)=>{
-  captionStatus.textContent="Auto caption error: "+e.error;
- };
-
- rec.onend=()=>{
-  video.pause();
-  if(autoStream){
-   autoStream.getTracks().forEach(t=>t.stop());
-   autoStream=null;
-  }
-  document.getElementById("captionMode").value="auto";
-  showCaptions();
-  captionStatus.textContent="Auto captions finished. Check the text.";
-  if(recognition===rec)recognition=null;
- };
-
- video.pause();
- video.currentTime=0;
- video.onseeked=()=>{
-  video.onseeked=null;
-  try{
-   autoStream=video.captureStream();
-   const track=autoStream.getAudioTracks()[0];
-   if(!track){
-    captionStatus.textContent="Video में audio नहीं मिला।";
-    autoStream.getTracks().forEach(t=>t.stop());
-    autoStream=null;
-    return;
-   }
-   rec.start(track);
-   video.play().then(()=>{
-    captionStatus.textContent="Creating captions from audio...";
-   }).catch(()=>{
-    captionStatus.textContent="Video playback failed.";
-    try{rec.stop();}catch(e){}
+ try {
+   const response = await fetch(API_URL + "/clips", {
+     method: "POST",
+     headers: {"Content-Type": "application/json"},
+     body: JSON.stringify({url})
    });
-  }catch(e){
-   captionStatus.textContent="Auto captions start नहीं हो पाए।";
-  }
- };
-};
 
-document.getElementById("findViral").onclick=()=>{
- const out=document.getElementById("viralResults");
- const msg=document.getElementById("viralStatus");
- out.innerHTML="";
- selectedMoments=[];
+   if (!response.ok) throw new Error("Processing request failed");
 
- if(!video.duration||!captions.length){
-  msg.textContent="पहले वीडियो अपलोड करके Auto या Manual Captions बनाएं।";
-  return;
+   const data = await response.json();
+   status.innerText = "Processing Job ID: " + data.job_id;
+ } catch (error) {
+   status.innerText = "Error: " + error.message;
  }
-
- const type=document.getElementById("viralType").value;
- const groups={
-  funny:["हंसी","मजाक","मजेदार","😂","🤣","haha","funny","joke","lol"],
-  surprise:["अचानक","यकीन","चौंक","हैरान","wow","surprise","शानदार"],
-  interesting:["लेकिन","क्योंकि","कैसे","राज","सच","क्यों","secret","लेकिन"]
- };
- const words=groups[type]||[...groups.funny,...groups.surprise,...groups.interesting];
-
- const ranked=captions.map(c=>{
-  const t=c.text.toLowerCase();
-  let score=30;
-  if(/[!?😂🤣]/.test(t))score+=15;
-  if(t.length>20&&t.length<130)score+=15;
-  if(/\d/.test(t))score+=5;
-  words.forEach(w=>{if(t.includes(w))score+=15;});
-  score=Math.min(99,score);
-  return {...c,score};
- }).sort((a,b)=>b.score-a.score);
-
- const count=Number(document.getElementById("count").value);
- const duration=Number(document.getElementById("duration").value);
- if(video.duration<duration){
-  msg.textContent="वीडियो चुनी गई Clip Duration से छोटी है।";
-  return;
- }
-
- const maxStart=video.duration-duration;
- const chosen=[];
- for(const c of ranked){
-  const center=(c.start+c.end)/2;
-  const start=Math.max(0,Math.min(maxStart,center-duration/2));
-  if(chosen.every(x=>Math.abs(x.start-start)>duration*0.6)){
-   chosen.push({start,score:c.score,text:c.text});
-  }
-  if(chosen.length>=count)break;
- }
-
- if(!chosen.length){
-  msg.textContent="कोई Moment नहीं मिला।";
-  return;
- }
-
- selectedMoments=chosen.map(x=>x.start);
- chosen.forEach((c,i)=>{
-  const box=document.createElement("div");
-  box.className="clip";
-  const p=document.createElement("p");
-  p.textContent="Moment "+(i+1)+" | "+c.start.toFixed(1)+" सेकंड | संभावित Score: "+c.score+"/99";
-  const q=document.createElement("p");
-  q.textContent=c.text;
-  box.append(p,q);
-  out.appendChild(box);
- });
- msg.textContent=chosen.length+" संभावित Moments चुने गए। अब Generate Clips दबाएं।";
-};
-
-function seekTo(time){
- return new Promise((resolve,reject)=>{
-  if(Math.abs(video.currentTime-time)<0.05){
-   resolve();
-   return;
-  }
-  const done=()=>resolve();
-  video.addEventListener("seeked",done,{once:true});
-  video.currentTime=time;
- });
 }
-
-function drawCaption(ctx,width,height,time){
- if(document.getElementById("captionMode").value==="none")return;
- const c=captions.find(x=>time>=x.start&&time<=x.end);
- if(!c)return;
-
- const size=Number(document.getElementById("captionSize").value);
- const font=document.getElementById("captionFont").value;
- const bold=document.getElementById("captionBold").checked;
- const color=document.getElementById("captionColor").value;
- const bg=document.getElementById("captionBg").value;
- const opacity=Number(document.getElementById("captionOpacity").value)/100;
- const position=document.getElementById("captionPosition").value;
-
- ctx.font=(bold?"bold ":"")+size+"px '"+font+"'";
- ctx.textAlign="center";
- ctx.textBaseline="middle";
-
- const maxWidth=width*.86;
- const words=c.text.split(/\s+/);
- const lines=[];
- let line="";
- for(const word of words){
-  const test=line?line+" "+word:word;
-  if(ctx.measureText(test).width>maxWidth&&line){
-   lines.push(line);
-   line=word;
-  }else line=test;
- }
- if(line)lines.push(line);
-
- const lineHeight=size*1.3;
- const boxHeight=lines.length*lineHeight+24;
- let y=position==="top"?height*.08:
- position==="center"?(height-boxHeight)/2:
- height-boxHeight-height*.07;
-
- const r=parseInt(bg.slice(1,3),16);
- const g=parseInt(bg.slice(3,5),16);
- const b=parseInt(bg.slice(5,7),16);
- ctx.fillStyle="rgba("+r+","+g+","+b+","+opacity+")";
- ctx.fillRect(width*.05,y,width*.9,boxHeight);
- ctx.fillStyle=color;
- lines.forEach((txt,i)=>{
-  ctx.fillText(txt,width/2,y+12+lineHeight*(i+.5),maxWidth);
- });
-}
-
-function recordClip(start,duration,vertical){
- return new Promise(async(resolve,reject)=>{
-  const width=vertical?720:1280;
-  const height=vertical?1280:720;
-  const canvas=document.createElement("canvas");
-  canvas.width=width;
-  canvas.height=height;
-  const ctx=canvas.getContext("2d");
-  let drawing=true;
-  let animation;
-
-  const draw=()=>{
-   if(video.videoWidth&&video.videoHeight){
-    const scale=Math.max(width/video.videoWidth,height/video.videoHeight);
-    const sw=width/scale;
-    const sh=height/scale;
-    ctx.drawImage(video,(video.videoWidth-sw)/2,(video.videoHeight-sh)/2,sw,sh,0,0,width,height);
-    drawCaption(ctx,width,height,video.currentTime);
-   }
-   if(drawing)animation=requestAnimationFrame(draw);
-  };
-
-  try{
-   video.pause();
-   await seekTo(start);
-   const canvasStream=canvas.captureStream(30);
-   const sourceStream=video.captureStream();
-   const stream=new MediaStream([
-    ...canvasStream.getVideoTracks(),
-    ...sourceStream.getAudioTracks()
-   ]);
-   const mime=["video/webm;codecs=vp9","video/webm;codecs=vp8","video/webm"].find(t=>MediaRecorder.isTypeSupported(t));
-   if(!mime)throw Error("WebM unsupported");
-
-   const chunks=[];
-   const recorder=new MediaRecorder(stream,{mimeType:mime});
-   recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
-   recorder.onerror=()=>{
-    drawing=false;
-    reject(Error("Recording failed"));
-   };
-   recorder.onstop=()=>{
-    drawing=false;
-    cancelAnimationFrame(animation);
-    stream.getTracks().forEach(t=>t.stop());
-    resolve(new Blob(chunks,{type:mime}));
-   };
-
-   draw();
-   recorder.start();
-   await video.play();
-
-   const finish=()=>{
-    if(video.currentTime>=start+duration||video.ended){
-     video.pause();
-     if(recorder.state==="recording")recorder.stop();
-    }else if(recorder.state==="recording"){
-     requestAnimationFrame(finish);
-    }
-   };
-   finish();
-  }catch(e){
-   drawing=false;
-   reject(e);
-  }
- });
-}
-
-document.getElementById("make").onclick=async()=>{
- if(!video.src||!video.duration){
-  status.textContent="Please select your own video first.";
-  return;
- }
- if(recognition){
-  try{recognition.stop();}catch(e){}
-  recognition=null;
- }
- const count=Number(document.getElementById("count").value);
- const duration=Number(document.getElementById("duration").value);
- const vertical=document.getElementById("format").value==="vertical";
- if(video.duration<duration){
-  status.textContent="Video is shorter than selected duration.";
-  return;
- }
-
- results.innerHTML="";
- const maxStart=video.duration-duration;
- const useMoments=selectedMoments.length>0;
- for(let i=0;i<count;i++){
-  status.textContent="Creating clip "+(i+1)+" of "+count+"...";
-  try{
-   const start=useMoments
-    ?selectedMoments[i%selectedMoments.length]
-    :maxStart*(count===1?0:i/(count-1));
-   const blob=await recordClip(start,duration,vertical);
-   const url=URL.createObjectURL(blob);
-   const box=document.createElement("div");
-   box.className="clip";
-   const link=document.createElement("a");
-   link.href=url;
-   link.download="viral-clip-"+(i+1)+".webm";
-   link.textContent="Download Clip "+(i+1);
-   box.appendChild(link);
-   results.appendChild(box);
-  }catch(e){
-   status.textContent="Could not create clip. Try another video.";
-   return;
-  }
- }
- video.pause();
- status.textContent="All clips are ready!";
-};
 </script>
 </body>
 </html>
