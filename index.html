@@ -11,13 +11,14 @@ body{margin:0;background:#10111b;color:white;font-family:Arial}
 header{text-align:center;padding:25px}
 h1{color:#a78bfa}
 main{max-width:650px;margin:20px auto;padding:22px;background:#202132;border-radius:16px}
-input,select,button{width:100%;padding:13px;margin:9px 0;border-radius:8px;font-size:16px}
-input,select{background:#111322;color:white;border:1px solid #555}
+input,select,button,textarea{width:100%;padding:13px;margin:9px 0;border-radius:8px;font-size:16px}
+input,select,textarea{background:#111322;color:white;border:1px solid #555}
 button{background:#8057ee;color:white;border:0;font-weight:bold;cursor:pointer}
 video{width:100%;margin-top:15px;background:#000}
-#status{color:#b9a4ff;overflow-wrap:anywhere}
+#status,#ytstatus{color:#b9a4ff;overflow-wrap:anywhere}
 .clip{padding:12px;background:#111322;margin:12px 0;border-radius:8px}
 a{color:#b9a4ff}
+small{color:#c9c9d8;line-height:1.5}
 </style>
 </head>
 <body>
@@ -25,6 +26,7 @@ a{color:#b9a4ff}
 <h1>AI Viral Clips</h1>
 <p>Create short clips from your own videos</p>
 </header>
+
 <main>
 <h2>1. YouTube Video Link</h2>
 <input type="url" id="youtube" placeholder="Paste YouTube video URL here">
@@ -55,23 +57,51 @@ a{color:#b9a4ff}
 <option value="horizontal">16:9 Landscape</option>
 </select>
 
+<h2>6. Captions</h2>
+<select id="captionMode">
+<option value="none">No Captions</option>
+<option value="manual">Manual Captions</option>
+<option value="auto">Auto Captions</option>
+</select>
+
+<label>Auto Caption Language</label>
+<select id="captionLanguage">
+<option value="hi-IN">Hindi</option>
+<option value="en-US">English</option>
+</select>
+
+<button id="autoCaption">Generate Auto Captions</button>
+<p><small>Auto captions need browser speech recognition and internet. Speech may be processed by your browser's speech service. Accuracy can vary.</small></p>
+
+<h3>Manual Captions</h3>
+<p><small>हर लाइन में ऐसे लिखो: शुरू का समय | खत्म होने का समय | Caption</small></p>
+<textarea id="manualText" rows="5" placeholder="0|3|नमस्ते दोस्तों&#10;3|6|आज हम एक नई वीडियो देखेंगे"></textarea>
+<button id="applyManual">Apply Manual Captions</button>
+<p id="captionStatus"></p>
+<div id="captionList"></div>
+
 <button id="make">Generate Clips</button>
 <p id="status">Select your own video to begin.</p>
 <div id="results"></div>
 </main>
+
 <script>
 const fileInput=document.getElementById("file");
 const video=document.getElementById("video");
 const status=document.getElementById("status");
 const results=document.getElementById("results");
+const captionStatus=document.getElementById("captionStatus");
+const captionList=document.getElementById("captionList");
 let videoURL="";
+let captions=[];
+let recognition=null;
 
 document.getElementById("check").onclick=()=>{
  const url=document.getElementById("youtube").value.trim();
  const out=document.getElementById("ytstatus");
  try{
   const u=new URL(url);
-  const valid=(u.hostname==="youtube.com"||u.hostname==="www.youtube.com"||u.hostname==="m.youtube.com"||u.hostname==="youtu.be");
+  const valid=["youtube.com","www.youtube.com","m.youtube.com","youtu.be"].includes(u.hostname);
   if(!valid)throw new Error();
   out.textContent="YouTube link accepted. Upload your own video file below to create clips.";
  }catch(e){
@@ -86,8 +116,131 @@ fileInput.addEventListener("change",()=>{
  videoURL=URL.createObjectURL(file);
  video.src=videoURL;
  results.innerHTML="";
+ captions=[];
+ captionList.innerHTML="";
+ captionStatus.textContent="";
  status.textContent="Video loaded. Choose your clip settings.";
 });
+
+function showCaptions(){
+ captionList.innerHTML="";
+ captions.forEach((c,i)=>{
+  const p=document.createElement("p");
+  p.textContent=(i+1)+". "+c.start.toFixed(1)+"s - "+c.end.toFixed(1)+"s: "+c.text;
+  captionList.appendChild(p);
+ });
+}
+
+document.getElementById("applyManual").onclick=()=>{
+ const lines=document.getElementById("manualText").value.split("\n");
+ const newCaptions=[];
+ for(const line of lines){
+  if(!line.trim())continue;
+  const parts=line.split("|");
+  if(parts.length<3){
+   captionStatus.textContent="Please use: start|end|caption";
+   return;
+  }
+  const start=Number(parts[0].trim());
+  const end=Number(parts[1].trim());
+  const text=parts.slice(2).join("|").trim();
+  if(!Number.isFinite(start)||!Number.isFinite(end)||start<0||end<=start||!text){
+   captionStatus.textContent="Please check caption times and text.";
+   return;
+  }
+  newCaptions.push({start,end,text});
+ }
+ captions=newCaptions.sort((a,b)=>a.start-b.start);
+ document.getElementById("captionMode").value="manual";
+ showCaptions();
+ captionStatus.textContent=captions.length+" manual captions added.";
+};
+
+document.getElementById("autoCaption").onclick=()=>{
+ if(!video.src||!video.duration){
+  captionStatus.textContent="Please upload a video first.";
+  return;
+ }
+ const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!SpeechRecognition){
+  captionStatus.textContent="Auto captions are not supported in this browser.";
+  return;
+ }
+ if(typeof video.captureStream!=="function"){
+  captionStatus.textContent="This browser cannot read the video's audio for captions.";
+  return;
+ }
+ if(recognition){
+  try{recognition.stop();}catch(e){}
+  recognition=null;
+ }
+ captions=[];
+ showCaptions();
+ const rec=new SpeechRecognition();
+ recognition=rec;
+ rec.lang=document.getElementById("captionLanguage").value;
+ rec.continuous=true;
+ rec.interimResults=false;
+ rec.onresult=(event)=>{
+  for(let i=event.resultIndex;i<event.results.length;i++){
+   if(event.results[i].isFinal){
+    const text=event.results[i][0].transcript.trim();
+    if(text){
+     const end=video.currentTime;
+     const estimatedStart=Math.max(0,end-Math.max(1.5,text.length/12));
+     const start=captions.length?Math.max(estimatedStart,captions[captions.length-1].end):estimatedStart;
+     if(end>start){
+      captions.push({start,end,text});
+      showCaptions();
+     }
+    }
+   }
+  }
+ };
+ rec.onerror=(event)=>{
+  captionStatus.textContent="Caption error: "+event.error+". Try again or use Manual Captions.";
+ };
+ rec.onend=()=>{
+  video.pause();
+  document.getElementById("captionMode").value="auto";
+  showCaptions();
+  captionStatus.textContent="Auto caption process finished. Check the captions.";
+  if(recognition===rec)recognition=null;
+ };
+ try{
+  video.pause();
+  video.currentTime=0;
+  video.onseeked=()=>{
+   video.onseeked=null;
+   try{
+    const stream=video.captureStream();
+    const track=stream.getAudioTracks()[0];
+    if(!track){
+     captionStatus.textContent="No audio track found in this video.";
+     stream.getTracks().forEach(t=>t.stop());
+     return;
+    }
+    rec.onend=()=>{
+     video.pause();
+     stream.getTracks().forEach(t=>t.stop());
+     document.getElementById("captionMode").value="auto";
+     showCaptions();
+     captionStatus.textContent="Auto captions finished. Check the captions.";
+     if(recognition===rec)recognition=null;
+    };
+    rec.start(track);
+    video.play().catch(()=>{
+     captionStatus.textContent="Could not play video. Press play and try again.";
+    });
+    captionStatus.textContent="Listening to video audio and creating captions...";
+   }catch(e){
+    captionStatus.textContent="Could not start auto captions. Try Manual Captions.";
+   }
+  };
+ }catch(e){
+  captionStatus.textContent="Could not prepare video for captions.";
+ }
+};
 
 function waitForSeek(){
  return new Promise(resolve=>video.addEventListener("seeked",resolve,{once:true}));
@@ -98,20 +251,52 @@ function recordClip(start,duration,vertical){
   const width=vertical?720:1280;
   const height=vertical?1280:720;
   const canvas=document.createElement("canvas");
-  canvas.width=width;canvas.height=height;
+  canvas.width=width;
+  canvas.height=height;
   const ctx=canvas.getContext("2d");
+  let drawing=true;
   let animation;
-
   const draw=()=>{
-   const vw=video.videoWidth,vh=video.videoHeight;
+   const vw=video.videoWidth;
+   const vh=video.videoHeight;
    if(vw&&vh){
     const scale=Math.max(width/vw,height/vh);
-    const sw=width/scale,sh=height/scale;
+    const sw=width/scale;
+    const sh=height/scale;
     ctx.drawImage(video,(vw-sw)/2,(vh-sh)/2,sw,sh,0,0,width,height);
    }
-   if(!video.paused&&!video.ended)animation=requestAnimationFrame(draw);
+   const mode=document.getElementById("captionMode").value;
+   if(mode!=="none"){
+    const current=captions.find(c=>video.currentTime>=c.start&&video.currentTime<=c.end);
+    if(current){
+     const fontSize=vertical?34:38;
+     ctx.font="bold "+fontSize+"px Arial";
+     ctx.textAlign="center";
+     const words=current.text.split(" ");
+     const lines=[];
+     let line="";
+     const maxWidth=width*0.86;
+     for(const word of words){
+      const test=line?line+" "+word:word;
+      if(ctx.measureText(test).width>maxWidth&&line){
+       lines.push(line);
+       line=word;
+      }else line=test;
+     }
+     if(line)lines.push(line);
+     const lineHeight=fontSize*1.25;
+     const boxHeight=lines.length*lineHeight+28;
+     const boxY=height-boxHeight-65;
+     ctx.fillStyle="rgba(0,0,0,0.72)";
+     ctx.fillRect(width*0.05,boxY,width*0.9,boxHeight);
+     ctx.fillStyle="#ffffff";
+     lines.forEach((txt,i)=>{
+      ctx.fillText(txt,width/2,boxY+22+fontSize+i*lineHeight,maxWidth);
+     });
+    }
+   }
+   if(drawing)animation=requestAnimationFrame(draw);
   };
-
   try{
    video.pause();
    video.currentTime=start;
@@ -122,41 +307,48 @@ function recordClip(start,duration,vertical){
     ...canvasStream.getVideoTracks(),
     ...sourceStream.getAudioTracks()
    ]);
-   const mime=["video/webm;codecs=vp9","video/webm;codecs=vp8","video/webm"]
-    .find(t=>MediaRecorder.isTypeSupported(t));
+   const mime=["video/webm;codecs=vp9","video/webm;codecs=vp8","video/webm"].find(t=>MediaRecorder.isTypeSupported(t));
    if(!mime)throw new Error("WebM unsupported");
    const chunks=[];
    const recorder=new MediaRecorder(stream,{mimeType:mime});
    recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
    recorder.onerror=()=>reject(new Error("Recording failed"));
    recorder.onstop=()=>{
+    drawing=false;
     cancelAnimationFrame(animation);
     stream.getTracks().forEach(t=>t.stop());
     resolve(new Blob(chunks,{type:mime}));
    };
-   recorder.start();
    draw();
+   recorder.start();
    await video.play();
    const finish=()=>{
     if(video.currentTime>=start+duration||video.ended){
      video.pause();
      if(recorder.state==="recording")recorder.stop();
-    }else requestAnimationFrame(finish);
+    }else if(recorder.state==="recording"){
+     requestAnimationFrame(finish);
+    }
    };
    finish();
-  }catch(e){reject(e);}
+  }catch(e){
+   drawing=false;
+   reject(e);
+  }
  });
 }
 
 document.getElementById("make").onclick=async()=>{
  if(!video.src||!video.duration){
-  status.textContent="Please select your own video first.";return;
+  status.textContent="Please select your own video first.";
+  return;
  }
  const count=Number(document.getElementById("count").value);
  const duration=Number(document.getElementById("duration").value);
  const vertical=document.getElementById("format").value==="vertical";
  if(video.duration<duration){
-  status.textContent="Video is shorter than selected duration.";return;
+  status.textContent="Video is shorter than selected duration.";
+  return;
  }
  results.innerHTML="";
  const maxStart=video.duration-duration;
@@ -169,11 +361,14 @@ document.getElementById("make").onclick=async()=>{
    const box=document.createElement("div");
    box.className="clip";
    const link=document.createElement("a");
-   link.href=url;link.download="clip-"+(i+1)+".webm";
+   link.href=url;
+   link.download="clip-"+(i+1)+".webm";
    link.textContent="Download Clip "+(i+1);
-   box.appendChild(link);results.appendChild(box);
+   box.appendChild(link);
+   results.appendChild(box);
   }catch(e){
-   status.textContent="Could not create clip. Try another video.";return;
+   status.textContent="Could not create clip. Try another video.";
+   return;
   }
  }
  video.pause();
