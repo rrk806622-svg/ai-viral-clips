@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Viral Clips</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#10111b;color:white}
+header{text-align:center;padding:35px 15px}
+header h1{font-size:36px;color:#a78bfa}
+header p{color:#bbb}
+main{max-width:650px;margin:20px auto;padding:25px;background:#202132;border-radius:16px}
+h2{margin-top:0}
+input,button{width:100%;padding:14px;margin:10px 0;border-radius:8px;font-size:16px}
+input{background:#111322;color:white;border:1px solid #555}
+button{background:#8057ee;color:white;border:0;font-weight:bold;cursor:pointer}
+button:hover{background:#6840d0}
+#status{color:#b9a4ff;overflow-wrap:anywhere}
+footer{text-align:center;color:#888;padding:25px}
+</style>
+</head>
+<body>
+<header>
+<h1>AI Viral Clips</h1>
+<p>Turn YouTube videos into short clips</p>
+</header>
+<main>
+<h2>Create Viral Clips</h2>
+<p>Paste your YouTube video link below.</p>
+<input type="url" id="videoUrl" placeholder="Paste YouTube video URL here">
+<button onclick="createClips()">Generate Clips</button>
+<p id="status">Your AI clipping workspace is ready.</p>
+</main>
+<footer>AI Viral Clips © 2026</footer>
+<script>
+function createClips(){
+const url=document.getElementById('videoUrl').value.trim();
+const status=document.getElementById('status');
+if(!url){
+status.textContent='Please paste a YouTube video link.';
+return;
+}
+if(!/^https?:\/\/(www\.)?(youtube\.com|youtu\.be)\//i.test(url)){
+status.textContent='Please enter a valid YouTube link.';
+return;
+}
+status.textContent='Link received! AI clip processing will be connected in the next development step.';
+}
+</script>
+</body>
+</html>
