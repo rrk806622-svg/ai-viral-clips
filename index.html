@@ -1,52 +1,138 @@
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI Viral Clips</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;font-family:Arial,sans-serif;background:#10111b;color:white}
-header{text-align:center;padding:35px 15px}
-header h1{font-size:36px;color:#a78bfa}
-header p{color:#bbb}
+body{margin:0;background:#10111b;color:white;font-family:Arial,sans-serif}
+header{text-align:center;padding:30px 15px}
+h1{color:#a78bfa}
 main{max-width:650px;margin:20px auto;padding:25px;background:#202132;border-radius:16px}
-h2{margin-top:0}
-input,button{width:100%;padding:14px;margin:10px 0;border-radius:8px;font-size:16px}
+input,button{width:100%;padding:13px;margin:9px 0;border-radius:8px;font-size:16px}
 input{background:#111322;color:white;border:1px solid #555}
 button{background:#8057ee;color:white;border:0;font-weight:bold;cursor:pointer}
-button:hover{background:#6840d0}
+video{width:100%;margin-top:15px;background:#000}
 #status{color:#b9a4ff;overflow-wrap:anywhere}
-footer{text-align:center;color:#888;padding:25px}
+a{color:#a78bfa}
 </style>
 </head>
 <body>
 <header>
 <h1>AI Viral Clips</h1>
-<p>Turn YouTube videos into short clips</p>
+<p>Create short clips from your own videos</p>
 </header>
+
 <main>
-<h2>Create Viral Clips</h2>
-<p>Paste your YouTube video link below.</p>
-<input type="url" id="videoUrl" placeholder="Paste YouTube video URL here">
-<button onclick="createClips()">Generate Clips</button>
-<p id="status">Your AI clipping workspace is ready.</p>
+<h2>1. YouTube Video Link</h2>
+<input type="url" id="youtube" placeholder="Paste YouTube link (optional)">
+<p>YouTube link is for reference. Upload your own video file below to create a clip.</p>
+
+<h2>2. Select Your Video</h2>
+<input type="file" id="file" accept="video/*">
+<video id="video" controls></video>
+
+<h2>3. Choose Clip Time</h2>
+<label>Start time (seconds)</label>
+<input type="number" id="start" value="0" min="0">
+<label>End time (seconds)</label>
+<input type="number" id="end" value="15" min="1">
+
+<button id="make">Create Clip</button>
+<p id="status">Select your video to begin.</p>
+<div id="result"></div>
 </main>
-<footer>AI Viral Clips © 2026</footer>
+
 <script>
-function createClips(){
-const url=document.getElementById('videoUrl').value.trim();
-const status=document.getElementById('status');
-if(!url){
-status.textContent='Please paste a YouTube video link.';
-return;
-}
-if(!/^https?:\/\/(www\.)?(youtube\.com|youtu\.be)\//i.test(url)){
-status.textContent='Please enter a valid YouTube link.';
-return;
-}
-status.textContent='Link received! AI clip processing will be connected in the next development step.';
-}
+const fileInput=document.getElementById("file");
+const video=document.getElementById("video");
+const status=document.getElementById("status");
+const result=document.getElementById("result");
+let videoURL="";
+
+fileInput.addEventListener("change",()=>{
+  const file=fileInput.files[0];
+  if(!file)return;
+  if(videoURL)URL.revokeObjectURL(videoURL);
+  videoURL=URL.createObjectURL(file);
+  video.src=videoURL;
+  status.textContent="Video loaded. Choose start and end times.";
+  result.innerHTML="";
+});
+
+document.getElementById("make").addEventListener("click",async()=>{
+  if(!video.src || !video.duration){
+    status.textContent="Please select a video first.";
+    return;
+  }
+
+  const start=Number(document.getElementById("start").value);
+  const end=Number(document.getElementById("end").value);
+
+  if(!Number.isFinite(start)||!Number.isFinite(end)||
+     start<0||end<=start||end>video.duration){
+    status.textContent="Please enter valid start and end times.";
+    return;
+  }
+
+  if(!video.captureStream || !window.MediaRecorder){
+    status.textContent="Your browser does not support clip creation.";
+    return;
+  }
+
+  const stream=video.captureStream();
+  const mime=["video/webm;codecs=vp9","video/webm;codecs=vp8","video/webm"]
+    .find(type=>MediaRecorder.isTypeSupported(type));
+
+  if(!mime){
+    status.textContent="WebM recording is not supported in this browser.";
+    return;
+  }
+
+  const chunks=[];
+  let recorder;
+
+  try{
+    video.pause();
+    video.currentTime=start;
+    await new Promise(resolve=>{
+      video.addEventListener("seeked",resolve,{once:true});
+    });
+
+    recorder=new MediaRecorder(stream,{mimeType:mime});
+    recorder.ondataavailable=e=>{
+      if(e.data.size>0)chunks.push(e.data);
+    };
+
+    recorder.onstop=()=>{
+      const blob=new Blob(chunks,{type:mime});
+      const url=URL.createObjectURL(blob);
+      result.innerHTML='<p>Your clip is ready:</p><a href="'+url+'" download="my-clip.webm">Download Clip</a>';
+      status.textContent="Clip created successfully!";
+      stream.getTracks().forEach(track=>track.stop());
+    };
+
+    recorder.start();
+    await video.play();
+    status.textContent="Creating your clip...";
+
+    const check=()=>{
+      if(video.currentTime>=end || video.ended){
+        video.pause();
+        if(recorder.state==="recording")recorder.stop();
+      }else{
+        requestAnimationFrame(check);
+      }
+    };
+    check();
+
+  }catch(error){
+    status.textContent="Could not create clip. Please try again.";
+    stream.getTracks().forEach(track=>track.stop());
+  }
+});
 </script>
 </body>
 </html>
